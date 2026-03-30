@@ -21,8 +21,23 @@ export const habitRepository = {
   async create(userId: string, input: CreateHabitInput): Promise<Habit> {
     const { data, error } = await supabase
       .from('habits')
-      .insert({ ...input, user_id: userId, current_streak: 0, longest_streak: 0 })
-      .select().single()
+      .insert({
+        user_id: userId,
+        name: input.name,
+        description: input.description,
+        frequency_type: input.frequencyType,
+        frequency_value: input.frequencyValue,
+        scheduled_days: input.scheduledDays,
+        difficulty_tier: input.difficultyTier,
+        base_xp: input.baseXP,
+        is_active: input.isActive,
+        start_date: input.startDate,
+        end_date: input.endDate,
+        current_streak: 0,
+        longest_streak: 0,
+      })
+      .select()
+      .single()
     if (error) throw error
     return data
   },

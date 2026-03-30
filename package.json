@@ -2,6 +2,10 @@
   "name": "habitforge",
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
+  "overrides": {
+    "expo-constants": "~15.4.5",
+    "expo-linking": "~6.2.2"
+  },
   "scripts": {
     "web": "npm run dev --workspace=apps/web",
     "mobile": "npm run start --workspace=apps/mobile",

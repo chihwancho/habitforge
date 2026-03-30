@@ -4,7 +4,9 @@ import { NavBar } from '../components/NavBar'
 
 export default function Badges() {
   const { profile } = useAuthContext()
-  const { badges, allBadges, earnedIds, loading } = useBadges(profile!.id)
+  const { badges, allBadges, earnedIds, loading } = useBadges(profile?.id ?? '')
+
+  if (!profile) return <div className="loading-screen">Loading...</div>
 
   return (
     <div className="page">

@@ -44,7 +44,18 @@ export const rewardRepository = {
 
   async create(userId: string, input: CreateRewardInput): Promise<Reward> {
     const { data, error } = await supabase
-      .from('rewards').insert({ ...input, user_id: userId }).select().single()
+      .from('rewards')
+      .insert({
+        user_id: userId,
+        name: input.name,
+        description: input.description,
+        badge_point_cost: input.badgePointCost,
+        reward_type: input.rewardType,
+        cosmetic_asset_url: input.cosmeticAssetUrl,
+        is_active: input.isActive,
+      })
+      .select()
+      .single()
     if (error) throw error
     return data
   },

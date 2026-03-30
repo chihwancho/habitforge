@@ -6,9 +6,11 @@ import { CreateRewardModal } from '../components/CreateRewardModal'
 
 export default function Rewards() {
   const { profile } = useAuthContext()
-  const { rewards, loading, createReward, redeemReward } = useRewards(profile!.id)
+  const { rewards, loading, createReward, redeemReward } = useRewards(profile?.id ?? '')
   const [showCreate, setShowCreate] = useState(false)
   const [redeeming, setRedeeming] = useState<string | null>(null)
+
+  if (!profile) return <div className="loading-screen">Loading...</div>
 
   const handleRedeem = async (rewardId: string) => {
     setRedeeming(rewardId)

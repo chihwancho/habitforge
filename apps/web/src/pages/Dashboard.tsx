@@ -8,8 +8,10 @@ import { XPBar, NavBar } from '../components/NavBar'
 export default function Dashboard() {
   const { profile } = useAuthContext()
   const { habits, loading, createHabit, completeHabit, archiveHabit } = useHabits(profile!.id)
-  const { levelInfo } = useXP(profile!.id)
+  const { levelInfo } = useXP(profile?.id ?? '')
   const [showCreate, setShowCreate] = useState(false)
+
+  if (!profile) return <div className="loading-screen">Loading...</div>
 
   return (
     <div className="page">
