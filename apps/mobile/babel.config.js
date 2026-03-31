@@ -4,7 +4,10 @@ module.exports = function (api) {
     presets: ['babel-preset-expo'],
     plugins: [
       ['module-resolver', {
-        alias: { '@habitforge/shared': '../../packages/shared/src' },
+        alias: {
+          '@habitforge/shared': '../../packages/shared/src',
+          '@habitforge/db': '../../packages/db/src',
+        },
       }],
     ],
   }

@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@habitforge/shared': path.resolve(__dirname, '../../packages/shared/src'),
+      '@habitforge/db': path.resolve(__dirname, '../../packages/db/src'),
     },
   },
 })

@@ -7,7 +7,7 @@ import { XPBar, NavBar } from '../components/NavBar'
 
 export default function Dashboard() {
   const { profile } = useAuthContext()
-  const { habits, loading, createHabit, completeHabit, archiveHabit } = useHabits(profile!.id)
+  const { habits, loading, createHabit, completeHabit, archiveHabit } = useHabits(profile?.id ?? '')
   const { levelInfo } = useXP(profile?.id ?? '')
   const [showCreate, setShowCreate] = useState(false)
 
@@ -19,13 +19,13 @@ export default function Dashboard() {
       <div className="page-content">
         <header className="dashboard-header">
           <div>
-            <h1>Hey, {profile?.username}</h1>
+            <h1>Hey, {profile.username}</h1>
             <p className="subtitle">Keep the streak alive.</p>
           </div>
           <button className="btn-primary" onClick={() => setShowCreate(true)}>+ New Habit</button>
         </header>
 
-        {levelInfo && <XPBar levelInfo={levelInfo} badgePoints={profile?.badgePoints ?? 0} />}
+        {levelInfo && <XPBar levelInfo={levelInfo} badgePoints={profile.badgePoints ?? 0} />}
 
         {loading ? (
           <div className="loading">Loading habits...</div>

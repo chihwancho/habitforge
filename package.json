@@ -2,13 +2,12 @@
   "name": "habitforge",
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
-  "overrides": {
-    "expo-constants": "~15.4.5",
-    "expo-linking": "~6.2.2"
-  },
   "scripts": {
     "web": "npm run dev --workspace=apps/web",
     "mobile": "npm run start --workspace=apps/mobile",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "db:push": "npm run db:push --workspace=packages/db",
+    "db:generate": "npm run db:generate --workspace=packages/db",
+    "db:studio": "npm run db:studio --workspace=packages/db"
   }
 }

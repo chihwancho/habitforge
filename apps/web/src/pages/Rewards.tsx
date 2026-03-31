@@ -31,7 +31,7 @@ export default function Rewards() {
         <header className="page-header">
           <div>
             <h1>Rewards</h1>
-            <p className="subtitle">You have {profile?.badgePoints ?? 0} badge points to spend</p>
+            <p className="subtitle">You have {profile.badgePoints ?? 0} badge points to spend</p>
           </div>
           <button className="btn-primary" onClick={() => setShowCreate(true)}>+ New Reward</button>
         </header>
@@ -45,7 +45,7 @@ export default function Rewards() {
         ) : (
           <div className="reward-grid">
             {rewards.map(reward => {
-              const canAfford = (profile?.badgePoints ?? 0) >= reward.badgePointCost
+              const canAfford = (profile.badgePoints ?? 0) >= reward.badgePointCost
               return (
                 <div key={reward.id} className={`reward-card ${!canAfford ? 'unaffordable' : ''}`}>
                   <div className="reward-info">

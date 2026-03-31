@@ -4,8 +4,9 @@ import { badgeService } from '../services/badgeService'
 import { habitService } from '../services/habitService'
 import { userRepository } from '../repositories/userRepository'
 import { badgeRepository } from '../repositories/badgeRepository'
-import { Badge, CreateHabitInput, CreateRewardInput, Habit, Reward, User, UserBadge } from '../types'
-import { getLevelInfo, LevelInfo } from '../utils/xp'
+import type { Badge, CreateHabitInput, CreateRewardInput, Habit, Reward, User, UserBadge } from '../types'
+import { getLevelInfo } from '../utils/xp'
+import type { LevelInfo } from '../types'
 
 export function useAuth() {
   const [user, setUser] = useState<any>(null)
@@ -16,8 +17,12 @@ export function useAuth() {
     const { data: { subscription } } = authService.onAuthStateChange(async (authUser) => {
       setUser(authUser)
       if (authUser) {
-        const p = await authService.getProfile(authUser.id)
-        setProfile(p)
+        try {
+          const p = await authService.getProfile(authUser.id)
+          setProfile(p)
+        } catch {
+          setProfile(null)
+        }
       } else {
         setProfile(null)
       }
@@ -41,6 +46,7 @@ export function useHabits(userId: string) {
   const [error, setError] = useState<string | null>(null)
 
   const fetchHabits = useCallback(async () => {
+    if (!userId) return
     try {
       setLoading(true)
       setHabits(await habitService.getHabits(userId))
@@ -80,6 +86,7 @@ export function useXP(userId: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!userId) return
     userRepository.getById(userId)
       .then(u => setLevelInfo(getLevelInfo(u.totalXP)))
       .finally(() => setLoading(false))
@@ -94,6 +101,7 @@ export function useBadges(userId: string) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!userId) return
     Promise.all([badgeService.getUserBadges(userId), badgeRepository.getAllBadges()])
       .then(([earned, all]) => { setBadges(earned); setAllBadges(all) })
       .finally(() => setLoading(false))
@@ -109,6 +117,7 @@ export function useRewards(userId: string) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!userId) return
     rewardService.getRewards(userId)
       .then(setRewards)
       .catch(e => setError(e.message))

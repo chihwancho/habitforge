@@ -7,8 +7,8 @@ export interface User {
   totalXP: number
   level: number
   badgePoints: number
-  avatarUrl?: string
-  themeId?: string
+  avatarUrl?: string | null
+  themeId?: string | null
   createdAt: string
 }
 
@@ -22,18 +22,18 @@ export interface Habit {
   id: string
   userId: string
   name: string
-  description?: string
+  description?: string | null
   frequencyType: FrequencyType
   frequencyValue: number
-  scheduledDays: DayOfWeek[]
-  difficultyTier: DifficultyTier
+  scheduledDays: string[]
+  difficultyTier: number
   baseXP: number
   isActive: boolean
   isArchived: boolean
   currentStreak: number
   longestStreak: number
   startDate: string
-  endDate?: string
+  endDate?: string | null
   createdAt: string
 }
 
@@ -43,14 +43,22 @@ export interface HabitLog {
   userId: string
   completedAt: string
   xpEarned: number
-  streakMultiplier: number
-  note?: string
+  streakMultiplier: string | number
+  note?: string | null
 }
 
-export type CreateHabitInput = Omit<
-  Habit,
-  'id' | 'userId' | 'isArchived' | 'currentStreak' | 'longestStreak' | 'createdAt'
->
+export type CreateHabitInput = {
+  name: string
+  description?: string
+  frequencyType: FrequencyType
+  frequencyValue: number
+  scheduledDays: DayOfWeek[]
+  difficultyTier: DifficultyTier
+  baseXP: number
+  isActive: boolean
+  startDate: string
+  endDate?: string
+}
 
 // ─── Badges ──────────────────────────────────────────────────────────────────
 
@@ -61,8 +69,8 @@ export interface Badge {
   id: string
   name: string
   description: string
-  iconUrl: string
-  badgeType: BadgeType
+  iconUrl?: string | null
+  badgeType: string
   badgePointValue: number
   isSpecialChallenge: boolean
   createdAt: string
@@ -71,9 +79,9 @@ export interface Badge {
 export interface BadgeCriteria {
   id: string
   badgeId: string
-  criteriaType: BadgeCriteriaType
+  criteriaType: string
   targetValue: number
-  habitId?: string
+  habitId?: string | null
 }
 
 export interface UserBadge {
@@ -81,7 +89,7 @@ export interface UserBadge {
   userId: string
   badgeId: string
   earnedAt: string
-  earnedContext?: string
+  earnedContext?: string | null
   badge?: Badge
 }
 
@@ -93,10 +101,10 @@ export interface Reward {
   id: string
   userId: string
   name: string
-  description?: string
+  description?: string | null
   badgePointCost: number
-  rewardType: RewardType
-  cosmeticAssetUrl?: string
+  rewardType: string
+  cosmeticAssetUrl?: string | null
   isActive: boolean
   createdAt: string
 }
@@ -109,7 +117,14 @@ export interface RewardRedemption {
   pointsSpent: number
 }
 
-export type CreateRewardInput = Omit<Reward, 'id' | 'userId' | 'createdAt'>
+export type CreateRewardInput = {
+  name: string
+  description?: string
+  badgePointCost: number
+  rewardType: RewardType
+  cosmeticAssetUrl?: string
+  isActive: boolean
+}
 
 // ─── Themes ──────────────────────────────────────────────────────────────────
 

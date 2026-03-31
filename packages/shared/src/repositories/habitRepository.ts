@@ -1,5 +1,39 @@
 import { supabase } from '../providers/supabaseProvider'
-import { CreateHabitInput, Habit, HabitLog } from '../types'
+import type { Habit, HabitLog } from '../types'
+import type { CreateHabitInput } from '../types'
+
+function mapHabit(row: any): Habit {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    description: row.description ?? null,
+    frequencyType: row.frequency_type,
+    frequencyValue: row.frequency_value,
+    scheduledDays: row.scheduled_days ?? [],
+    difficultyTier: row.difficulty_tier,
+    baseXP: row.base_xp,
+    isActive: row.is_active,
+    isArchived: row.is_archived,
+    currentStreak: row.current_streak,
+    longestStreak: row.longest_streak,
+    startDate: row.start_date,
+    endDate: row.end_date ?? null,
+    createdAt: row.created_at,
+  }
+}
+
+function mapHabitLog(row: any): HabitLog {
+  return {
+    id: row.id,
+    habitId: row.habit_id,
+    userId: row.user_id,
+    completedAt: row.completed_at,
+    xpEarned: row.xp_earned,
+    streakMultiplier: row.streak_multiplier,
+    note: row.note ?? null,
+  }
+}
 
 export const habitRepository = {
   async getAll(userId: string): Promise<Habit[]> {
@@ -8,14 +42,14 @@ export const habitRepository = {
       .eq('user_id', userId).eq('is_active', true).eq('is_archived', false)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data ?? []
+    return (data ?? []).map(mapHabit)
   },
 
   async getById(habitId: string): Promise<Habit> {
     const { data, error } = await supabase
       .from('habits').select('*').eq('id', habitId).single()
     if (error) throw error
-    return data
+    return mapHabit(data)
   },
 
   async create(userId: string, input: CreateHabitInput): Promise<Habit> {
@@ -36,10 +70,9 @@ export const habitRepository = {
         current_streak: 0,
         longest_streak: 0,
       })
-      .select()
-      .single()
+      .select().single()
     if (error) throw error
-    return data
+    return mapHabit(data)
   },
 
   async updateStreak(habitId: string, currentStreak: number, longestStreak: number): Promise<void> {
@@ -69,7 +102,7 @@ export const habitRepository = {
       })
       .select().single()
     if (error) throw error
-    return data
+    return mapHabitLog(data)
   },
 
   async getLogsForHabit(habitId: string, limit = 30): Promise<HabitLog[]> {
@@ -77,7 +110,7 @@ export const habitRepository = {
       .from('habit_logs').select('*').eq('habit_id', habitId)
       .order('completed_at', { ascending: false }).limit(limit)
     if (error) throw error
-    return data ?? []
+    return (data ?? []).map(mapHabitLog)
   },
 
   async wasCompletedToday(habitId: string, userId: string): Promise<boolean> {

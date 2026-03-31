@@ -1,17 +1,21 @@
 import { supabase } from '../providers/supabaseProvider'
 import { userRepository, rewardRepository } from '../repositories/userRepository'
-import { CreateRewardInput, Reward, RewardRedemption, User } from '../types'
+import type { CreateRewardInput, Reward, RewardRedemption, User } from '../types'
 
 export const authService = {
   async signUp(email: string, password: string, username: string): Promise<User> {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username }
+      }
+    })
     if (error) throw error
     if (!data.user) throw new Error('Sign up failed')
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .insert({ id: data.user.id, email, username, total_xp: 0, level: 1, badge_points: 0 })
-      .select().single()
-    if (profileError) throw profileError
+  
+    // Trigger handles profile creation — just fetch it
+    const profile = await userRepository.getById(data.user.id)
     return profile
   },
 

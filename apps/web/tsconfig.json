@@ -14,7 +14,9 @@
     "strict": true,
     "paths": {
       "@habitforge/shared": ["../../packages/shared/src"],
-      "@habitforge/shared/*": ["../../packages/shared/src/*"]
+      "@habitforge/shared/*": ["../../packages/shared/src/*"],
+      "@habitforge/db": ["../../packages/db/src"],
+      "@habitforge/db/*": ["../../packages/db/src/*"]
     }
   },
   "include": ["src"]

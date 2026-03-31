@@ -1,6 +1,6 @@
 import { habitRepository } from '../repositories/habitRepository'
 import { userRepository } from '../repositories/userRepository'
-import { CreateHabitInput, Habit, HabitLog } from '../types'
+import type { CreateHabitInput, Habit, HabitLog } from '../types'
 import { BASE_XP, calculateXP } from '../utils/xp'
 import { badgeService } from './badgeService'
 
@@ -10,26 +10,36 @@ export const habitService = {
   },
 
   async createHabit(userId: string, input: CreateHabitInput): Promise<Habit> {
-    const baseXP = input.baseXP ?? BASE_XP[input.difficultyTier]
+    const baseXP = input.baseXP ?? BASE_XP[input.difficultyTier as 1 | 2 | 3]
     return habitRepository.create(userId, { ...input, baseXP })
   },
 
   async completeHabit(habitId: string, userId: string, note?: string): Promise<{
-    log: HabitLog; xpEarned: number; newStreak: number; badgesEarned: string[]
+    log: HabitLog
+    xpEarned: number
+    newStreak: number
+    badgesEarned: string[]
   }> {
     const habit = await habitRepository.getById(habitId)
     const alreadyDone = await habitRepository.wasCompletedToday(habitId, userId)
     if (alreadyDone) throw new Error('Habit already completed today')
 
     const newStreak = habit.currentStreak + 1
-    const { totalXP, streakMultiplier } = calculateXP(habit.baseXP, habit.difficultyTier, newStreak)
+    const { totalXP, streakMultiplier } = calculateXP(
+      habit.baseXP,
+      habit.difficultyTier as 1 | 2 | 3,
+      newStreak
+    )
+
     const log = await habitRepository.logCompletion(habitId, userId, totalXP, streakMultiplier, note)
     const longestStreak = Math.max(newStreak, habit.longestStreak)
     await habitRepository.updateStreak(habitId, newStreak, longestStreak)
     await userRepository.addXP(userId, totalXP)
+
     const badgesEarned = await badgeService.checkAndAward(userId, {
       event: 'habit_completed', streak: newStreak, habitId,
     })
+
     return { log, xpEarned: totalXP, newStreak, badgesEarned }
   },
 

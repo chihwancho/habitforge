@@ -1,0 +1,1 @@
+export { rewardRepository } from './userRepository'

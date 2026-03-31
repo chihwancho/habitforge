@@ -14,7 +14,7 @@ export default function Badges() {
       <div className="page-content">
         <header className="page-header">
           <h1>Badges</h1>
-          <p className="subtitle">{badges.length} earned · {profile?.badgePoints ?? 0} badge points</p>
+          <p className="subtitle">{badges.length} earned · {profile.badgePoints ?? 0} badge points</p>
         </header>
 
         {loading ? (
