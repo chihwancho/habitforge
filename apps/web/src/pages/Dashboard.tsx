@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useHabits, useXP } from '@habitforge/shared'
 import { useAuthContext } from '../contexts/AuthContext'
 import HabitCard from '../components/HabitCard'
@@ -6,9 +6,15 @@ import CreateHabitModal from '../components/CreateHabitModal'
 import { XPBar, NavBar } from '../components/NavBar'
 
 export default function Dashboard() {
-  const { profile } = useAuthContext()
-  const { habits, loading, createHabit, completeHabit, archiveHabit } = useHabits(profile?.id ?? '')
-  const { levelInfo } = useXP(profile?.id ?? '')
+  const { profile, refreshProfile } = useAuthContext()
+  const { levelInfo, refresh: refreshXP } = useXP(profile?.id ?? '')
+
+  const handleXPChange = useCallback(() => {
+    refreshProfile()
+    refreshXP()
+  }, [refreshProfile, refreshXP])
+
+  const { habits, completedIds, loading, createHabit, completeHabit, archiveHabit } = useHabits(profile?.id ?? '', handleXPChange)
   const [showCreate, setShowCreate] = useState(false)
 
   if (!profile) return <div className="loading-screen">Loading...</div>
@@ -39,6 +45,7 @@ export default function Dashboard() {
               <HabitCard
                 key={habit.id}
                 habit={habit}
+                isCompleted={completedIds.has(habit.id)}
                 onComplete={(note) => completeHabit(habit.id, note)}
                 onArchive={() => archiveHabit(habit.id)}
               />

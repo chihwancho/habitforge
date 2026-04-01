@@ -3,13 +3,16 @@ import { Habit } from '@habitforge/shared'
 
 interface HabitCardProps {
   habit: Habit
+  isCompleted: boolean
   onComplete: (note?: string) => Promise<any>
   onArchive: () => Promise<void>
 }
 
-export default function HabitCard({ habit, onComplete, onArchive }: HabitCardProps) {
+export default function HabitCard({ habit, isCompleted, onComplete, onArchive }: HabitCardProps) {
   const [completing, setCompleting] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
+
+  const done = isCompleted || justCompleted
 
   const handleComplete = async () => {
     setCompleting(true)
@@ -27,7 +30,7 @@ export default function HabitCard({ habit, onComplete, onArchive }: HabitCardPro
   const difficultyLabel = ['', 'Easy', 'Medium', 'Hard'][habit.difficultyTier]
 
   return (
-    <div className={`habit-card ${justCompleted ? 'just-completed' : ''}`}>
+    <div className={`habit-card ${done ? 'just-completed' : ''}`}>
       <div className="habit-card-header">
         <div>
           <h3>{habit.name}</h3>
@@ -51,11 +54,11 @@ export default function HabitCard({ habit, onComplete, onArchive }: HabitCardPro
       </div>
 
       <button
-        className={`btn-complete ${justCompleted ? 'completed' : ''}`}
+        className={`btn-complete ${done ? 'completed' : ''}`}
         onClick={handleComplete}
-        disabled={completing || justCompleted}
+        disabled={completing || done}
       >
-        {justCompleted ? '✓ Done!' : completing ? 'Saving...' : 'Complete'}
+        {done ? '✓ Done!' : completing ? 'Saving...' : 'Complete'}
       </button>
     </div>
   )

@@ -8,6 +8,7 @@
     "build": "npm run build --workspaces",
     "db:push": "npm run db:push --workspace=packages/db",
     "db:generate": "npm run db:generate --workspace=packages/db",
-    "db:studio": "npm run db:studio --workspace=packages/db"
+    "db:studio": "npm run db:studio --workspace=packages/db",
+    "functions:deploy": "npx supabase functions deploy add-xp --no-verify-jwt && npx supabase functions deploy deduct-badge-points --no-verify-jwt && npx supabase functions deploy check-badges --no-verify-jwt && npx supabase functions deploy award-badge --no-verify-jwt"
   }
 }

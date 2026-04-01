@@ -35,6 +35,19 @@ function mapHabitLog(row: any): HabitLog {
   }
 }
 
+function getWeekStart(): string {
+  const now = new Date()
+  const day = now.getDay()
+  const diff = day === 0 ? 6 : day - 1
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - diff)
+  return monday.toISOString().split('T')[0] + 'T00:00:00'
+}
+
+function getTodayStart(): string {
+  return new Date().toISOString().split('T')[0] + 'T00:00:00'
+}
+
 export const habitRepository = {
   async getAll(userId: string): Promise<Habit[]> {
     const { data, error } = await supabase
@@ -113,13 +126,68 @@ export const habitRepository = {
     return (data ?? []).map(mapHabitLog)
   },
 
-  async wasCompletedToday(habitId: string, userId: string): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0]
+  async wasCompletedInPeriod(habitId: string, userId: string, frequencyType: string): Promise<boolean> {
+    if (frequencyType === 'one-time') {
+      const { count, error } = await supabase
+        .from('habit_logs').select('*', { count: 'exact', head: true })
+        .eq('habit_id', habitId).eq('user_id', userId)
+      if (error) throw error
+      return (count ?? 0) > 0
+    }
+
+    const since = frequencyType === 'weekly' ? getWeekStart() : getTodayStart()
+
     const { count, error } = await supabase
       .from('habit_logs').select('*', { count: 'exact', head: true })
       .eq('habit_id', habitId).eq('user_id', userId)
-      .gte('completed_at', `${today}T00:00:00`)
+      .gte('completed_at', since)
     if (error) throw error
     return (count ?? 0) > 0
+  },
+
+  async getCompletionStatuses(
+    habitIds: string[],
+    userId: string,
+    habits: Array<{ id: string; frequencyType: string }>
+  ): Promise<Set<string>> {
+    const completedIds = new Set<string>()
+    if (habitIds.length === 0) return completedIds
+
+    // Daily and custom habits — check today
+    const dailyHabits = habits.filter(h => h.frequencyType === 'daily' || h.frequencyType === 'custom')
+    if (dailyHabits.length > 0) {
+      const { data, error } = await supabase
+        .from('habit_logs').select('habit_id')
+        .eq('user_id', userId)
+        .in('habit_id', dailyHabits.map(h => h.id))
+        .gte('completed_at', getTodayStart())
+      if (error) throw error
+      for (const log of data ?? []) completedIds.add(log.habit_id)
+    }
+
+    // Weekly habits — check from Monday
+    const weeklyHabits = habits.filter(h => h.frequencyType === 'weekly')
+    if (weeklyHabits.length > 0) {
+      const { data, error } = await supabase
+        .from('habit_logs').select('habit_id')
+        .eq('user_id', userId)
+        .in('habit_id', weeklyHabits.map(h => h.id))
+        .gte('completed_at', getWeekStart())
+      if (error) throw error
+      for (const log of data ?? []) completedIds.add(log.habit_id)
+    }
+
+    // One-time habits — any completion ever
+    const oneTimeHabits = habits.filter(h => h.frequencyType === 'one-time')
+    if (oneTimeHabits.length > 0) {
+      const { data, error } = await supabase
+        .from('habit_logs').select('habit_id')
+        .eq('user_id', userId)
+        .in('habit_id', oneTimeHabits.map(h => h.id))
+      if (error) throw error
+      for (const log of data ?? []) completedIds.add(log.habit_id)
+    }
+
+    return completedIds
   },
 }

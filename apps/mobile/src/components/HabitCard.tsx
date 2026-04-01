@@ -5,6 +5,7 @@ import { colors, radius, typography } from '../theme'
 
 interface Props {
   habit: Habit
+  isCompleted: boolean
   onComplete: (note?: string) => Promise<any>
   onArchive: () => Promise<void>
 }
@@ -12,9 +13,11 @@ interface Props {
 const DIFFICULTY_LABELS = ['', 'Easy', 'Medium', 'Hard']
 const DIFFICULTY_COLORS = ['', colors.tier1, colors.tier2, colors.tier3]
 
-export default function HabitCard({ habit, onComplete, onArchive }: Props) {
+export default function HabitCard({ habit, isCompleted, onComplete, onArchive }: Props) {
   const [completing, setCompleting] = useState(false)
   const [justCompleted, setJustCompleted] = useState(false)
+
+  const done = isCompleted || justCompleted
 
   const handleComplete = async () => {
     setCompleting(true)
@@ -44,7 +47,7 @@ export default function HabitCard({ habit, onComplete, onArchive }: Props) {
   const tierColor = DIFFICULTY_COLORS[habit.difficultyTier]
 
   return (
-    <View style={[styles.card, justCompleted && styles.cardCompleted]}>
+    <View style={[styles.card, done && styles.cardCompleted]}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={[styles.tierDot, { backgroundColor: tierColor }]} />
@@ -78,13 +81,13 @@ export default function HabitCard({ habit, onComplete, onArchive }: Props) {
       </View>
 
       <TouchableOpacity
-        style={[styles.completeBtn, justCompleted && styles.completeBtnDone, (completing || justCompleted) && styles.completeBtnDisabled]}
+        style={[styles.completeBtn, done && styles.completeBtnDone, (completing || done) && styles.completeBtnDisabled]}
         onPress={handleComplete}
-        disabled={completing || justCompleted}
+        disabled={completing || done}
         activeOpacity={0.75}
       >
-        <Text style={[styles.completeBtnText, justCompleted && styles.completeBtnTextDone]}>
-          {justCompleted ? '✓ Done!' : completing ? 'Saving...' : 'Complete'}
+        <Text style={[styles.completeBtnText, done && styles.completeBtnTextDone]}>
+          {done ? '✓ Done!' : completing ? 'Saving...' : 'Complete'}
         </Text>
       </TouchableOpacity>
     </View>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useHabits, useXP } from '@habitforge/shared'
@@ -9,16 +9,24 @@ import CreateHabitSheet from '../../src/components/CreateHabitSheet'
 import { colors, radius, typography } from '../../src/theme'
 
 export default function HabitsScreen() {
-  const { profile, signOut } = useAuthContext()
-  const { habits, loading, createHabit, completeHabit, archiveHabit } = useHabits(profile!.id)
-  const { levelInfo } = useXP(profile!.id)
+  const { profile, signOut, refreshProfile } = useAuthContext()
+  const { levelInfo, refresh: refreshXP } = useXP(profile?.id ?? '')
+
+  const handleXPChange = useCallback(() => {
+    refreshProfile()
+    refreshXP()
+  }, [refreshProfile, refreshXP])
+
+  const { habits, completedIds, loading, createHabit, completeHabit, archiveHabit } = useHabits(profile?.id ?? '', handleXPChange)
   const [showCreate, setShowCreate] = useState(false)
+
+  if (!profile) return null
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hey, {profile?.username}</Text>
+          <Text style={styles.greeting}>Hey, {profile.username}</Text>
           <Text style={styles.subtitle}>Keep the streak alive.</Text>
         </View>
         <TouchableOpacity onPress={signOut}>
@@ -27,7 +35,7 @@ export default function HabitsScreen() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {levelInfo && <XPBar levelInfo={levelInfo} badgePoints={profile?.badgePoints ?? 0} />}
+        {levelInfo && <XPBar levelInfo={levelInfo} badgePoints={profile.badgePoints ?? 0} />}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Your habits</Text>
@@ -45,7 +53,9 @@ export default function HabitsScreen() {
               </View>
             : habits.map(habit => (
                 <HabitCard
-                  key={habit.id} habit={habit}
+                  key={habit.id}
+                  habit={habit}
+                  isCompleted={completedIds.has(habit.id)}
                   onComplete={(note) => completeHabit(habit.id, note)}
                   onArchive={() => archiveHabit(habit.id)}
                 />

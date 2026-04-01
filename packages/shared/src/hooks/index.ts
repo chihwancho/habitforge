@@ -7,12 +7,12 @@ import { badgeRepository } from '../repositories/badgeRepository'
 import type { Badge, CreateHabitInput, CreateRewardInput, Habit, Reward, User, UserBadge } from '../types'
 import { getLevelInfo } from '../utils/xp'
 import type { LevelInfo } from '../types'
-
+ 
 export function useAuth() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-
+ 
   useEffect(() => {
     const { data: { subscription } } = authService.onAuthStateChange(async (authUser) => {
       setUser(authUser)
@@ -30,92 +30,117 @@ export function useAuth() {
     })
     return () => subscription.unsubscribe()
   }, [])
-
+ 
   const signIn = useCallback((email: string, password: string) =>
     authService.signIn(email, password), [])
   const signUp = useCallback((email: string, password: string, username: string) =>
     authService.signUp(email, password, username), [])
   const signOut = useCallback(() => authService.signOut(), [])
-
-  return { user, profile, loading, signIn, signUp, signOut }
+ 
+  const refreshProfile = useCallback(async () => {
+    if (!user) return
+    try {
+      const p = await authService.getProfile(user.id)
+      setProfile(p)
+    } catch {
+      // ignore
+    }
+  }, [user])
+ 
+  return { user, profile, loading, signIn, signUp, signOut, refreshProfile }
 }
-
-export function useHabits(userId: string) {
+ 
+export function useHabits(userId: string, onXPChange?: () => void) {
   const [habits, setHabits] = useState<Habit[]>([])
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+ 
   const fetchHabits = useCallback(async () => {
     if (!userId) return
     try {
       setLoading(true)
-      setHabits(await habitService.getHabits(userId))
+      const fetchedHabits = await habitService.getHabits(userId)
+      setHabits(fetchedHabits)
+ 
+      if (fetchedHabits.length > 0) {
+        const statuses = await habitService.getCompletionStatuses(userId, fetchedHabits)
+        setCompletedIds(statuses)
+      }
     } catch (e: any) {
       setError(e.message)
     } finally {
       setLoading(false)
     }
   }, [userId])
-
+ 
   useEffect(() => { fetchHabits() }, [fetchHabits])
-
+ 
   const createHabit = useCallback(async (input: CreateHabitInput) => {
     const h = await habitService.createHabit(userId, input)
     setHabits(prev => [h, ...prev])
     return h
   }, [userId])
-
+ 
   const completeHabit = useCallback(async (habitId: string, note?: string) => {
     const result = await habitService.completeHabit(habitId, userId, note)
     setHabits(prev => prev.map(h =>
       h.id === habitId ? { ...h, currentStreak: result.newStreak } : h
     ))
+    setCompletedIds(prev => new Set([...prev, habitId]))
+    onXPChange?.()
     return result
-  }, [userId])
-
+  }, [userId, onXPChange])
+ 
   const archiveHabit = useCallback(async (habitId: string) => {
     await habitService.archiveHabit(habitId)
     setHabits(prev => prev.filter(h => h.id !== habitId))
   }, [])
-
-  return { habits, loading, error, createHabit, completeHabit, archiveHabit, refresh: fetchHabits }
+ 
+  return { habits, completedIds, loading, error, createHabit, completeHabit, archiveHabit, refresh: fetchHabits }
 }
-
+ 
 export function useXP(userId: string) {
   const [levelInfo, setLevelInfo] = useState<LevelInfo | null>(null)
   const [loading, setLoading] = useState(true)
-
+ 
+  const refresh = useCallback(() => {
+    if (!userId) return
+    userRepository.getById(userId)
+      .then(u => setLevelInfo(getLevelInfo(u.totalXP)))
+  }, [userId])
+ 
   useEffect(() => {
     if (!userId) return
     userRepository.getById(userId)
       .then(u => setLevelInfo(getLevelInfo(u.totalXP)))
       .finally(() => setLoading(false))
   }, [userId])
-
-  return { levelInfo, loading }
+ 
+  return { levelInfo, loading, refresh }
 }
-
+ 
 export function useBadges(userId: string) {
   const [badges, setBadges] = useState<UserBadge[]>([])
   const [allBadges, setAllBadges] = useState<Badge[]>([])
   const [loading, setLoading] = useState(true)
-
+ 
   useEffect(() => {
     if (!userId) return
     Promise.all([badgeService.getUserBadges(userId), badgeRepository.getAllBadges()])
       .then(([earned, all]) => { setBadges(earned); setAllBadges(all) })
       .finally(() => setLoading(false))
   }, [userId])
-
+ 
   const earnedIds = new Set(badges.map(b => b.badgeId))
   return { badges, allBadges, earnedIds, loading }
 }
-
+ 
 export function useRewards(userId: string) {
   const [rewards, setRewards] = useState<Reward[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+ 
   useEffect(() => {
     if (!userId) return
     rewardService.getRewards(userId)
@@ -123,15 +148,15 @@ export function useRewards(userId: string) {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [userId])
-
+ 
   const createReward = useCallback(async (input: CreateRewardInput) => {
     const r = await rewardService.createReward(userId, input)
     setRewards(prev => [...prev, r])
     return r
   }, [userId])
-
+ 
   const redeemReward = useCallback((rewardId: string) =>
     rewardService.redeemReward(userId, rewardId), [userId])
-
+ 
   return { rewards, loading, error, createReward, redeemReward }
 }
