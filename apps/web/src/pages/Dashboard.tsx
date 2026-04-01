@@ -4,10 +4,12 @@ import { useAuthContext } from '../contexts/AuthContext'
 import HabitCard from '../components/HabitCard'
 import CreateHabitModal from '../components/CreateHabitModal'
 import { XPBar, NavBar } from '../components/NavBar'
+import { ToastContainer, useToasts } from '../components/Toast'
 
 export default function Dashboard() {
   const { profile, refreshProfile } = useAuthContext()
   const { levelInfo, refresh: refreshXP } = useXP(profile?.id ?? '')
+  const { toasts, addToast, dismissToast } = useToasts()
 
   const handleXPChange = useCallback(() => {
     refreshProfile()
@@ -18,6 +20,17 @@ export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false)
 
   if (!profile) return <div className="loading-screen">Loading...</div>
+
+  const handleComplete = async (habitId: string, note?: string) => {
+    const result = await completeHabit(habitId, note)
+    addToast(`+${result.xpEarned} XP · ${result.newStreak} day streak`, 'xp')
+    if (result.badgesEarned.length > 0) {
+      for (const badge of result.badgesEarned) {
+        addToast(`Badge unlocked: ${badge}!`, 'badge')
+      }
+    }
+    return result
+  }
 
   return (
     <div className="page">
@@ -46,7 +59,7 @@ export default function Dashboard() {
                 key={habit.id}
                 habit={habit}
                 isCompleted={completedIds.has(habit.id)}
-                onComplete={(note) => completeHabit(habit.id, note)}
+                onComplete={(note) => handleComplete(habit.id, note)}
                 onArchive={() => archiveHabit(habit.id)}
               />
             ))}
@@ -60,6 +73,8 @@ export default function Dashboard() {
           onCreate={async (input) => { await createHabit(input); setShowCreate(false) }}
         />
       )}
+
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

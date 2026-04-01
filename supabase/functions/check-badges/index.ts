@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 Deno.serve(async (req) => {
@@ -14,10 +15,16 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    const [{ data: badges }, { data: earnedRows }, { data: totalCompletions }] = await Promise.all([
-      supabase.from('badges').select('*, criteria:badge_criteria(*)').eq('is_special_challenge', false),
+    const [
+      { data: badges },
+      { data: earnedRows },
+      { data: totalCompletions },
+      { data: dailyDistinct },
+    ] = await Promise.all([
+      supabase.from('badges').select('*, criteria:badge_criteria(*)'),
       supabase.from('user_badges').select('badge_id').eq('user_id', userId),
       supabase.rpc('get_user_completion_count', { p_user_id: userId }),
+      supabase.rpc('get_daily_distinct_completions', { p_user_id: userId }),
     ])
 
     const earnedIds = new Set((earnedRows ?? []).map((r: any) => r.badge_id))
@@ -28,8 +35,9 @@ Deno.serve(async (req) => {
       if (!badge.criteria?.length) continue
 
       const allMet = badge.criteria.every((c: any) => {
-        if (c.criteria_type === 'streak_milestone')   return (streak ?? 0) >= c.target_value
-        if (c.criteria_type === 'total_completions')  return (totalCompletions ?? 0) >= c.target_value
+        if (c.criteria_type === 'streak_milestone')            return (streak ?? 0) >= c.target_value
+        if (c.criteria_type === 'total_completions')           return (totalCompletions ?? 0) >= c.target_value
+        if (c.criteria_type === 'daily_distinct_completions')  return (dailyDistinct ?? 0) >= c.target_value
         return false
       })
       if (!allMet) continue
@@ -37,7 +45,7 @@ Deno.serve(async (req) => {
       const { error: awardError } = await supabase.from('user_badges').insert({
         user_id: userId, badge_id: badge.id,
         earned_at: new Date().toISOString(),
-        earned_context: `streak=${streak}, completions=${totalCompletions}`,
+        earned_context: `streak=${streak}, completions=${totalCompletions}, dailyDistinct=${dailyDistinct}`,
       })
 
       if (awardError) {
